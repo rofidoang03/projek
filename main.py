@@ -1,21 +1,21 @@
-import dns.resolver
+import instaloader
+import sys
 
-def enumerate_subdomains(domain):
-    try:
-        answers = dns.resolver.resolve(domain, 'A')
-        for rdata in answers:
-            print(f"A Record: {rdata}")
-    except dns.resolver.NoAnswer:
-        print("No A Record found")
+def download_posts(username):
+    loader = instaloader.Instaloader()
 
     try:
-        answers = dns.resolver.resolve(domain, 'CNAME')
-        for rdata in answers:
-            print(f"CNAME Record: {rdata}")
-            if rdata.target != domain:  # Untuk menghindari looping tak terbatas pada CNAME yang mengarah ke dirinya sendiri
-                enumerate_subdomains(str(rdata.target))
-    except dns.resolver.NoAnswer:
-        print("No CNAME Record found")
+        profile = instaloader.Profile.from_username(loader.context, username)
+        for post in profile.get_posts():
+            loader.download_post(post, target=profile.username)
+        print("Download complete")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-domain = "example.com"
-enumerate_subdomains(domain)
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python download_instagram.py <username_target>")
+    else:
+        target_username = sys.argv[1]
+        download_posts(target_username)
+        
