@@ -28,7 +28,7 @@ def handle_packet(pkt):
 def capture_handshake(pkt):
     global selected_ssid_index, handshake_captured, handshake_packets
 
-    if pkt.haslayer(Dot11EAPOL) and selected_ssid_index is not None:
+    if pkt.haslayer(Dot11WPA) or pkt.haslayer(Dot11WPA2):
         if not handshake_captured:
             if pkt[Dot11].addr3 == found_networks[selected_ssid_index - 1][1]:
                 handshake_packets.append(pkt)
