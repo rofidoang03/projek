@@ -20,12 +20,12 @@ def handle_packet(pkt):
         network_info = (ssid, bssid, channel, auth_type)
         if network_info not in found_networks:
             found_networks.append(network_info)
-            print(f"SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Auth: {auth_type}")
+            print(f"[+] SSID: {ssid}\n[+] BSSID: {bssid}\n[+] Channel: {channel}\n[+] Auth: {auth_type}\n")
 
 def find_wifi_networks(interface):
     for channel in range(1, 14):
         os.system(f"iwconfig {interface} channel {channel}")
-        print(f"Scanning on channel {channel}...")
+        # print(f"Scanning on channel {channel}...")
         sniff(iface=interface, prn=handle_packet, timeout=5)
 
 # Ganti "wlan0" dengan interface wireless Anda
