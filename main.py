@@ -1,21 +1,19 @@
-import instaloader
-import sys
+import subprocess
+from scapy.all import *
 
-def download_posts(username):
-    loader = instaloader.Instaloader()
+# Fungsi untuk memeriksa apakah ada paket EAPOL di file pcap
+def check_eapol(file_path):
+    packets = rdpcap(file_path)
+    for packet in packets:
+        if packet.haslayer(EAPOL):
+            return True
+    return False
 
-    try:
-        profile = instaloader.Profile.from_username(loader.context, username)
-        for post in profile.get_posts():
-            loader.download_post(post, target=profile.username)
-        print("Download complete")
-    except Exception as e:
-        print(f"An error occurred: {e}")
+# Eksekusi perintah tshark untuk menangkap file handshake
+command = ['tshark', '-i', 'interface_name', '-w', 'output_file.pcap', 'wlan.fc.type_subtype == 0x08']
+subprocess.run(command)
 
-if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python download_instagram.py <username_target>")
-    else:
-        target_username = sys.argv[1]
-        download_posts(target_username)
-        
+# Cek apakah file pcap sudah memiliki paket EAPOL
+if check_eapol('output_file.pcap'):
+    print("File pcap sudah memiliki paket EAPOL, berhenti.")
+    # Lakukan tindakan lain atau hentikan proses di sini
