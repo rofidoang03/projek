@@ -4,6 +4,8 @@ import os
 found_networks = []
 
 def handle_packet(pkt):
+    global found_networks
+
     if pkt.haslayer(Dot11Beacon):
         ssid = pkt[Dot11Elt].info.decode()
         bssid = pkt[Dot11].addr3
@@ -21,14 +23,14 @@ def handle_packet(pkt):
         network_info = (ssid, bssid, channel, auth_type)
         if network_info not in found_networks:
             found_networks.append(network_info)
-            print(f"SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Auth: {auth_type}")
+            print(f"[{len(found_networks)}] SSID: {ssid}, BSSID: {bssid}, Channel: {channel}, Auth: {auth_type}")
 
 def capture_handshake(pkt):
-    global ssid_to_capture, handshake_captured, handshake_packets
+    global selected_ssid_index, handshake_captured, handshake_packets
 
-    if pkt.haslayer(Dot11EAPOL) and ssid_to_capture is not None:
+    if pkt.haslayer(Dot11EAPOL) and selected_ssid_index is not None:
         if not handshake_captured:
-            if pkt[Dot11].addr3 == ssid_to_capture:
+            if pkt[Dot11].addr3 == found_networks[selected_ssid_index - 1][1]:
                 handshake_packets.append(pkt)
                 print("Captured EAPOL packet for handshake.")
                 if len(handshake_packets) == 4:  # Menyimpan 4 paket handshake (dua dari AP, dua dari client)
@@ -37,21 +39,28 @@ def capture_handshake(pkt):
                     handshake_captured = True
 
 def find_wifi_networks(interface):
-    global ssid_to_capture, handshake_captured, handshake_packets
+    global selected_ssid_index, handshake_captured, handshake_packets
 
-    ssid_to_capture = None
+    selected_ssid_index = None
     handshake_captured = False
     handshake_packets = []
 
     sniff(iface=interface, prn=handle_packet, timeout=10)
 
-    ssid_input = input("Masukkan SSID yang ingin Anda capture handshake-nya: ")
-    for network in found_networks:
-        if ssid_input == network[0]:
-            ssid_to_capture = network[1]
-            break
+    while True:
+        try:
+            ssid_index = int(input("Masukkan nomor SSID yang ingin Anda capture handshake-nya (0 untuk keluar): "))
+            if ssid_index == 0:
+                break
+            if 1 <= ssid_index <= len(found_networks):
+                selected_ssid_index = ssid_index
+                break
+            else:
+                print("Nomor SSID tidak valid. Coba lagi.")
+        except ValueError:
+            print("Masukkan nomor SSID yang valid.")
 
-    if ssid_to_capture is not None:
+    if selected_ssid_index is not None:
         sniff(iface=interface, prn=capture_handshake, timeout=30)
 
 # Ganti "wlan0" dengan interface wireless Anda
